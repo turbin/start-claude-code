@@ -93,7 +93,7 @@ if [[ -z "$ACTION" ]]; then
 fi
 
 # ── Build claude command ──────────────────────────────────────
-CLAUDE_ARGS=("--allow-dangerously-skip-permissions" "${EXTRA_ARGS[@]}")
+CLAUDE_ARGS=("--allow-dangerously-skip-permissions" ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"})
 
 case "$ACTION" in
   resume)
