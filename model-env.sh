@@ -12,8 +12,34 @@
 
 set -euo pipefail
 
+# ── Git Bash compatibility ─────────────────────────────────────
+# On Windows (Git Bash), convert Unix-style paths to Windows paths
+# before passing to python3, and strip \r from outputs.
+case "$(uname -o 2>/dev/null || true)" in
+  Msys*|MINGW*)
+    TO_WIN_PATH() { cygpath -m "$1" 2>/dev/null || echo "$1"; }
+    TR_CR="tr -d '\r'"
+    ;;
+  *)
+    TO_WIN_PATH() { echo "$1"; }
+    TR_CR="cat"
+    ;;
+esac
+
 LOG_TAG="[model-env]"
+
+# ── Find python (Windows may have python3 as Store stub) ─────────
+if python3 -c "pass" 2>/dev/null; then
+  PY=python3
+elif python -c "pass" 2>/dev/null; then
+  PY=python
+else
+  echo "$LOG_TAG ERROR: python3/python not found" >&2
+  return 1 2>/dev/null || exit 1
+fi
+
 SETTINGS_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"
+SETTINGS_FILE_WIN="$(TO_WIN_PATH "$SETTINGS_FILE")"
 
 log()  { echo "$LOG_TAG $*" >&2; }
 warn() { echo "$LOG_TAG ⚠ $*" >&2; }
@@ -49,11 +75,11 @@ if [[ -z "$MODEL" ]]; then
   log "Reading model from $SETTINGS_FILE"
 
   # Extract raw model value; handle both clean and polluted strings
-  RAW_MODEL=$(python3 -c "
+  RAW_MODEL=$("$PY" -c "
 import json, re, sys
 
 try:
-    with open('$SETTINGS_FILE') as f:
+    with open('$SETTINGS_FILE_WIN') as f:
         d = json.load(f)
 except Exception as e:
     print(f'ERROR: {e}', file=sys.stderr)
@@ -71,7 +97,7 @@ if m:
     print(m.group(0))
 else:
     print(raw.split()[0])
-" 2>&1) || { warn "Failed to parse settings.json: $RAW_MODEL"; return 1 2>/dev/null || exit 1; }
+" 2>&1 | $TR_CR) || { warn "Failed to parse settings.json: $RAW_MODEL"; return 1 2>/dev/null || exit 1; }
 
   MODEL="$RAW_MODEL"
 fi
@@ -98,31 +124,31 @@ fi
 
 # ── Fix polluted settings.json ──────────────────────────────────
 if [[ -f "$SETTINGS_FILE" ]]; then
-  CURRENT_MODEL_FIELD=$(python3 -c "
+  CURRENT_MODEL_FIELD=$("$PY" -c "
 import json
-with open('$SETTINGS_FILE') as f:
+with open('$SETTINGS_FILE_WIN') as f:
     d = json.load(f)
 print(d.get('model', ''))
-" 2>/dev/null || echo "")
+" 2>/dev/null | $TR_CR || echo "")
 
   # Check if the field has extra content beyond the model name
   if [[ "$CURRENT_MODEL_FIELD" != "$MODEL" && "$CURRENT_MODEL_FIELD" == *"$MODEL"* ]]; then
     log "Fixing polluted model field in settings.json"
-    python3 -c "
+    "$PY" -c "
 import json
 
-with open('$SETTINGS_FILE') as f:
+with open('$SETTINGS_FILE_WIN') as f:
     d = json.load(f)
 
 old = d.get('model', '')
 d['model'] = '$MODEL'
 
-with open('$SETTINGS_FILE', 'w') as f:
+with open('$SETTINGS_FILE_WIN', 'w') as f:
     json.dump(d, f, indent=2)
     f.write('\n')
 
 print(f'  Fixed: \"{old[:50]}...\" → \"$MODEL\"')
-" 2>&1 | while read -r line; do log "$line"; done
+" 2>&1 | $TR_CR | while read -r line; do log "$line"; done
   fi
 fi
 

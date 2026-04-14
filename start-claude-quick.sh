@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ── Git Bash compatibility ─────────────────────────────────────
+# In Git Bash on Windows, ensure we use Unix-style tools and strip
+# carriage returns that Windows line-endings may introduce.
+case "$(uname -o 2>/dev/null || true)" in
+  Msys*|MINGW*)
+    # Force Unix find (not Windows find.exe) and strip \r everywhere
+    FIND_CMD="/usr/bin/find"
+    TR_CR="tr -d '\r'"
+    ;;
+  *)
+    FIND_CMD="find"
+    TR_CR="cat"
+    ;;
+esac
+
 # ── Help (handle before sourcing env) ─────────────────────────
 case "$*" in
   help|-h|--help)
@@ -68,11 +83,12 @@ done
 if [[ -z "$ACTION" ]]; then
   # Derive project directory name from script location
   # Claude Code maps /a/b/c → -a-b-c for the projects dir
-  PROJECT_KEY="$(echo "$SCRIPT_DIR" | sed 's|^/|-|; s|/|-|g')"
+  # In Git Bash, SCRIPT_DIR is already Unix-style (/d/workspace/...)
+  PROJECT_KEY="$(echo "$SCRIPT_DIR" | sed 's|^/|-|; s|/|-|g' | $TR_CR)"
   PROJECT_DIR="$HOME/.claude/projects/$PROJECT_KEY"
 
-  # Count existing sessions
-  SESSION_COUNT=$(find "$PROJECT_DIR" -maxdepth 1 -name '*.jsonl' 2>/dev/null | wc -l | tr -d ' ')
+  # Count existing sessions (use Unix find, strip \r from wc output)
+  SESSION_COUNT=$($FIND_CMD "$PROJECT_DIR" -maxdepth 1 -name '*.jsonl' 2>/dev/null | wc -l | $TR_CR | tr -d '[:space:]')
 
   if [[ "$SESSION_COUNT" -gt 0 ]]; then
     echo ""
@@ -80,7 +96,7 @@ if [[ -z "$ACTION" ]]; then
     echo "  [2] Resume latest"
     echo "  [3] Pick session..."
     echo ""
-    read -r -n 1 -p "  Choice (Enter=1): " CHOICE
+    read -r -n 1 -p "  Choice (Enter=1): " CHOICE || CHOICE=""
     echo ""
     case "$CHOICE" in
       2) ACTION="resume" ;;
@@ -107,4 +123,4 @@ case "$ACTION" in
     ;;
 esac
 
-exec claude "${CLAUDE_ARGS[@]}"
+exec claude "${CLAUDE_ARGS[@]}" || claude "${CLAUDE_ARGS[@]}"
