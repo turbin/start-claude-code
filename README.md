@@ -1,7 +1,7 @@
 # Claude Code 启动脚本
 
 > **用途：** 一键启动 Claude Code，支持会话管理、模型切换和权限透传。
-> **适用平台：** Linux / macOS / WSL（Windows Subsystem for Linux）
+> **适用平台：** Linux / macOS / WSL（Windows Subsystem for Linux）/ Git Bash on Windows
 > **注意：** 本脚本需在已安装 Claude Code 的环境中运行。
 
 ## 使用方法
@@ -58,6 +58,32 @@ npm install -g @anthropic-ai/claude-code
 chmod +x start-claude-quick.sh
 ```
 
+## Windows (Git Bash / cmd.exe / PowerShell)
+
+### Git Bash
+
+将脚本目录加入 `~/.bashrc`，即可在任何位置使用：
+
+```bash
+# ~/.bashrc
+export PATH="/d/workspace/newland-workspace/start-claude-code:$PATH"
+alias claude-start="start-claude-quick.sh"
+alias claude-resume="start-claude-quick.sh --resume"
+alias claude-new="start-claude-quick.sh --new"
+```
+
+然后 `source ~/.bashrc`，之后可在任意目录使用 `claude-start`、`claude-resume` 等命令。
+
+### cmd.exe / PowerShell
+
+使用 `start-claude-quick.bat`，它会自动查找 Git Bash 并回退到 WSL：
+
+```cmd
+:: 需要已安装 Git for Windows，或使用 start-claude-quick.bat 所在目录
+start-claude-quick.bat
+start-claude-quick.bat --resume
+```
+
 ## 配置
 
 ### 模型环境变量
@@ -83,8 +109,9 @@ cc switch <model>
 ## 项目结构
 
 ```
-agent-laucher/
-├── start-claude-quick.sh   # 启动脚本
+start-claude-code/
+├── start-claude-quick.sh   # 启动脚本（Linux / macOS / Git Bash）
+├── start-claude-quick.bat  # Windows 批处理包装器
 ├── model-env.sh            # 模型环境变量
 └── README.md               # 本文档
 ```
