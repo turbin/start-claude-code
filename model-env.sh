@@ -44,17 +44,47 @@ SETTINGS_FILE_WIN="$(TO_WIN_PATH "$SETTINGS_FILE")"
 log()  { echo "$LOG_TAG $*" >&2; }
 warn() { echo "$LOG_TAG ⚠ $*" >&2; }
 
+# ── Script location (for standalone sourcing) ──────────────────
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SCRIPT_SOURCE" ]]; do
+  LINK_TARGET="$(readlink "$SCRIPT_SOURCE")"
+  if [[ "$LINK_TARGET" == /* ]]; then
+    SCRIPT_SOURCE="$LINK_TARGET"
+  else
+    SCRIPT_SOURCE="$(dirname "$SCRIPT_SOURCE")/$LINK_TARGET"
+  fi
+done
+SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)}"
+
+# ── Load local .env file (for API keys) ─────────────────────────
+if [[ -f "$SCRIPT_DIR/.env" ]]; then
+  set -a
+  source "$SCRIPT_DIR/.env"
+  set +a
+fi
+
 # ── Model registry ──────────────────────────────────────────────
-# Returns: context_tokens|max_thinking_tokens|flags
+# Reads from models.json; returns: context_tokens|max_thinking_tokens|flags|base_url|id|api_key_env
 get_model_config() {
-  case "$1" in
-    minimax-2.7)  echo "245760|16384|cache"  ;;
-    minimax-2.5)  echo "245760|16384|cache"  ;;
-    qwen3.6-plus) echo "1000000|31999|cache" ;;
-    qwen3.5-plus) echo "1000000|31999|cache" ;;
-    kimi-k2.5)    echo "256000|16384|cache"  ;;
-    *)            echo ""                    ;;
-  esac
+  local model_name="$1"
+  local config_file="$SCRIPT_DIR/models.json"
+
+  if [[ ! -f "$config_file" ]]; then
+    echo ""
+    return
+  fi
+
+  "$PY" -c "
+import json, sys
+try:
+    with open('$(TO_WIN_PATH "$config_file")') as f:
+        d = json.load(f)
+    m = d.get('models', {}).get('$model_name')
+    if m:
+        print(f\"{m.get('context_tokens','')}|{m.get('max_thinking_tokens','')}|{m.get('flags','')}|{m.get('base_url','')}|{m.get('id','')}|{m.get('api_key_env','')}\")
+except Exception:
+    pass
+" 2>/dev/null | $TR_CR
 }
 
 # ── Detect model ────────────────────────────────────────────────
@@ -67,15 +97,11 @@ case "${MODEL:-}" in
 esac
 
 if [[ -z "$MODEL" ]]; then
-  if [[ ! -f "$SETTINGS_FILE" ]]; then
-    warn "settings.json not found at $SETTINGS_FILE"
-    return 0 2>/dev/null || exit 0
-  fi
+  if [[ -f "$SETTINGS_FILE" ]]; then
+    log "Reading model from $SETTINGS_FILE"
 
-  log "Reading model from $SETTINGS_FILE"
-
-  # Extract raw model value; handle both clean and polluted strings
-  RAW_MODEL=$("$PY" -c "
+    # Extract raw model value; handle both clean and polluted strings
+    RAW_MODEL=$("$PY" -c "
 import json, re, sys
 
 try:
@@ -99,12 +125,29 @@ else:
     print(raw.split()[0])
 " 2>&1 | $TR_CR) || { warn "Failed to parse settings.json: $RAW_MODEL"; return 1 2>/dev/null || exit 1; }
 
-  MODEL="$RAW_MODEL"
+    MODEL="$RAW_MODEL"
+  fi
 fi
 
+# ── Fallback to default model ───────────────────────────────────
 if [[ -z "$MODEL" ]]; then
-  warn "No model detected. Set ANTHROPIC_MODEL or pass model as argument."
-  return 0 2>/dev/null || exit 0
+  DEFAULT_MODEL=$("$PY" -c "
+import json
+try:
+    with open('$(TO_WIN_PATH "$SCRIPT_DIR/models.json")') as f:
+        d = json.load(f)
+    print(d.get('default_model', ''))
+except Exception:
+    pass
+" 2>/dev/null | $TR_CR)
+
+  if [[ -n "$DEFAULT_MODEL" ]]; then
+    MODEL="$DEFAULT_MODEL"
+    log "No model detected, using default: $MODEL"
+  else
+    warn "No model detected and no default configured."
+    return 0 2>/dev/null || exit 0
+  fi
 fi
 
 log "Detected model: $MODEL"
@@ -113,7 +156,7 @@ log "Detected model: $MODEL"
 CONFIG="$(get_model_config "$MODEL")"
 
 if [[ -n "$CONFIG" ]]; then
-  IFS='|' read -r CONTEXT THINKING FLAGS <<< "$CONFIG"
+  IFS='|' read -r CONTEXT THINKING FLAGS BASE_URL MODEL_ID API_KEY_ENV <<< "$CONFIG"
   log "Matched known model config"
 else
   CONTEXT=128000
@@ -153,11 +196,31 @@ print(f'  Fixed: \"{old[:50]}...\" → \"$MODEL\"')
 fi
 
 # ── Export environment variables ────────────────────────────────
-export ANTHROPIC_MODEL="$MODEL"
+if [[ -n "${MODEL_ID:-}" ]]; then
+  export ANTHROPIC_MODEL="$MODEL_ID"
+else
+  export ANTHROPIC_MODEL="$MODEL"
+fi
 export MAX_THINKING_TOKENS="$THINKING"
 
 # Context tokens — Claude Code respects this for context management
 export CLAUDE_CODE_MAX_CONTEXT_TOKENS="$CONTEXT"
+
+# Export base URL if present
+if [[ -n "${BASE_URL:-}" ]]; then
+  export ANTHROPIC_BASE_URL="$BASE_URL"
+fi
+
+# Export API key if the referenced env var is set
+if [[ -n "${API_KEY_ENV:-}" ]]; then
+  API_KEY_VALUE="${!API_KEY_ENV:-}"
+  if [[ -n "$API_KEY_VALUE" ]]; then
+    export ANTHROPIC_AUTH_TOKEN="$API_KEY_VALUE"
+    log "Using API key from $API_KEY_ENV"
+  else
+    warn "$API_KEY_ENV is not set — API calls may fail"
+  fi
+fi
 
 # Enable prompt caching (default, but explicit for clarity)
 # Only unset if it was previously disabled
@@ -170,8 +233,11 @@ fi
 SAFE_CONTEXT=$(( CONTEXT * 80 / 100 ))
 
 log "┌──────────────────────────────────────────────┐"
-log "│ Model:    $MODEL"
+log "│ Model:    $ANTHROPIC_MODEL"
 log "│ Context:  ${CONTEXT} tokens (safe: ~${SAFE_CONTEXT})"
 log "│ Thinking: ${THINKING} tokens max"
 log "│ Caching:  enabled"
+if [[ -n "${ANTHROPIC_BASE_URL:-}" ]]; then
+  log "│ Base URL: ${ANTHROPIC_BASE_URL}"
+fi
 log "└──────────────────────────────────────────────┘"

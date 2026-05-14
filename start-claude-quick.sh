@@ -44,7 +44,9 @@ Extra args:
 
 Environment:
   Automatically sources model-env.sh to set:
-    ANTHROPIC_MODEL            — model from settings.json
+    ANTHROPIC_MODEL            — model from settings.json or models.json
+    ANTHROPIC_BASE_URL         — provider base URL from models.json
+    ANTHROPIC_AUTH_TOKEN       — API key (via provider env var)
     MAX_THINKING_TOKENS        — model-specific thinking budget
     CLAUDE_CODE_MAX_CONTEXT_TOKENS — model context window
 
@@ -56,7 +58,17 @@ EOF
     ;;
 esac
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Resolve real path (handles symlinks)
+SCRIPT_SOURCE="$0"
+while [[ -L "$SCRIPT_SOURCE" ]]; do
+  LINK_TARGET="$(readlink "$SCRIPT_SOURCE")"
+  if [[ "$LINK_TARGET" == /* ]]; then
+    SCRIPT_SOURCE="$LINK_TARGET"
+  else
+    SCRIPT_SOURCE="$(dirname "$SCRIPT_SOURCE")/$LINK_TARGET"
+  fi
+done
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 
 # ── Load model environment variables ──────────────────────────
 source "$SCRIPT_DIR/model-env.sh"

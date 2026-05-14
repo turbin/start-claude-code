@@ -1,0 +1,29 @@
+{
+  "default_model": "qwen3.6-plus",
+  "models": {
+    "qwen3.6-plus": {
+      "id": "qwen3.6-plus",
+      "base_url": "https://coding.dashscope.aliyuncs.com/apps/anthropic",
+      "api_key_env": "QWEN_CODING_API_KEY",
+      "context_tokens": 1000000,
+      "max_thinking_tokens": 31999,
+      "flags": "cache"
+    },
+    "qwen3.5-plus": {
+      "id": "qwen3.5-plus",
+      "base_url": "https://coding.dashscope.aliyuncs.com/apps/anthropic",
+      "api_key_env": "QWEN_CODING_API_KEY",
+      "context_tokens": 1000000,
+      "max_thinking_tokens": 31999,
+      "flags": "cache"
+    },
+    "kimi-k2.5": {
+      "id": "kimi-k2.5",
+      "base_url": "https://api.moonshot.cn/anthropic",
+      "api_key_env": "MOONSHOT_API_KEY",
+      "context_tokens": 256000,
+      "max_thinking_tokens": 16384,
+      "flags": "cache"
+    }
+  }
+}
