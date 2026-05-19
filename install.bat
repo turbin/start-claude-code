@@ -38,7 +38,7 @@ if exist "%SOURCE_DIR%\.env" (
     echo QWEN_CODING_API_KEY=""
     echo.
     echo # Moonshot / Kimi API Key (optional)
-    echo REM MOONSHOT_API_KEY=""
+    echo # MOONSHOT_API_KEY=""
   ) > "%INSTALL_DIR%\.env"
   echo Created %INSTALL_DIR%\.env - please edit it to add your API keys
 )
