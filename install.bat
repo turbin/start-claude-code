@@ -58,6 +58,24 @@ if !errorlevel! neq 0 (
   echo PATH already contains %INSTALL_DIR%
 )
 
+REM -- Add PowerShell profile functions --
+for /f "tokens=*" %%p in ('powershell -NoProfile -Command "$profile"') do set "PS_PROFILE=%%p"
+if defined PS_PROFILE (
+  if not exist "!PS_PROFILE!" type nul > "!PS_PROFILE!"
+  findstr /c:"function claude-new" "!PS_PROFILE!" >nul 2>nul
+  if !errorlevel! neq 0 (
+    echo Adding PowerShell profile functions ...
+    (
+      echo.
+      echo function claude-new { ^& "%INSTALL_DIR%\claude-new.bat" $args }
+      echo function claude-resume { ^& "%INSTALL_DIR%\claude-resume.bat" $args }
+    ) >> "!PS_PROFILE!"
+    echo Added claude-new / claude-resume to PowerShell profile
+  ) else (
+    echo PowerShell profile functions already configured
+  )
+)
+
 REM -- Create convenience wrappers --
 (
   echo @echo off
