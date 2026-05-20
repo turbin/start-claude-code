@@ -37,7 +37,10 @@ cp -v "$SOURCE_DIR/model-switch.nu" "$INSTALL_DIR/"
 cp -v "$SOURCE_DIR/models.json" "$INSTALL_DIR/"
 
 # ── Create or copy .env ─────────────────────────────────────────
-if [[ -f "$SOURCE_DIR/.env" ]]; then
+# If install dir already has .env, preserve it (don't overwrite user's API keys)
+if [[ -f "$INSTALL_DIR/.env" ]]; then
+  echo "Existing .env found in install directory, preserving it"
+elif [[ -f "$SOURCE_DIR/.env" ]]; then
   cp -v "$SOURCE_DIR/.env" "$INSTALL_DIR/.env"
   echo "Copied existing .env with API keys"
 else
@@ -47,6 +50,9 @@ QWEN_CODING_API_KEY=""
 
 # Moonshot / Kimi API Key (optional)
 # MOONSHOT_API_KEY=""
+
+# DeepSeek API Key (optional)
+# DEEPSEEK_API_KEY=""
 EOF
   echo "Created $INSTALL_DIR/.env — please edit it to add your API keys"
 fi

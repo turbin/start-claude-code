@@ -35,7 +35,10 @@ copy /Y "%SOURCE_DIR%\models.json"            "%INSTALL_DIR%\" >nul
 echo Copied core files
 
 REM -- Create or copy .env --
-if exist "%SOURCE_DIR%\.env" (
+REM If install dir already has .env, preserve it (don't overwrite user's API keys)
+if exist "%INSTALL_DIR%\.env" (
+  echo Existing .env found in install directory, preserving it
+) else if exist "%SOURCE_DIR%\.env" (
   copy /Y "%SOURCE_DIR%\.env" "%INSTALL_DIR%\.env" >nul
   echo Copied existing .env with API keys
 ) else (
@@ -45,6 +48,9 @@ if exist "%SOURCE_DIR%\.env" (
     echo.
     echo # Moonshot / Kimi API Key (optional)
     echo # MOONSHOT_API_KEY=""
+    echo.
+    echo # DeepSeek API Key (optional)
+    echo # DEEPSEEK_API_KEY=""
   ) > "%INSTALL_DIR%\.env"
   echo Created %INSTALL_DIR%\.env - please edit it to add your API keys
 )
