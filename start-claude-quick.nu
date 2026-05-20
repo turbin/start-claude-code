@@ -10,10 +10,12 @@
 #   nu start-claude-quick.nu --new
 
 source model-env.nu
+source model-switch.nu
 
 def main [
     --new (-n),
     --resume (-r),
+    --switch: string = "",   # switch model before launching
     --help (-h),
     rest: list<string>  # extra args passed through to claude
 ] {
@@ -24,9 +26,10 @@ Usage: start-claude-quick.nu [OPTIONS] [-- EXTRA_ARGS...]
 Start Claude Code with auto-detected model environment and session management.
 
 Actions:
-  --resume, -r    Resume the most recent conversation
-  --new, -n       Start a fresh conversation
-  (none)          Interactive picker (new / resume / pick)
+  --resume, -r        Resume the most recent conversation
+  --new, -n           Start a fresh conversation
+  --switch <model>, -s  Switch model then start
+  (none)              Interactive picker (new / resume / pick)
 
 Extra args:
   Any arguments after '--' are passed through to claude directly.
@@ -44,8 +47,9 @@ Environment:
     CLAUDE_CODE_MAX_CONTEXT_TOKENS — model context window
 
 Model switching:
-  1. Run: cc switch <model>    (updates settings.json)
+  1. Run: model-switch <model> (updates settings.json)
   2. Run: nu start-claude-quick.nu  (auto-reads new model)
+  Or:    nu start-claude-quick.nu --switch deepseek-v4-flash  (one step)
 "
         return
     }
@@ -59,6 +63,11 @@ Model switching:
 
     # ── Load model environment variables ──────────────────────
     model-env
+
+    # ── Switch model if requested ─────────────────────────────
+    if ($switch | is-not-empty) {
+        model-switch $switch
+    }
 
     # ── Determine action ──────────────────────────────────────
     let mut action = if $new {

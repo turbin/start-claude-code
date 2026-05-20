@@ -29,6 +29,9 @@ mkdir -p "$INSTALL_DIR"
 cp -v "$SOURCE_DIR/start-claude-quick.sh" "$INSTALL_DIR/"
 cp -v "$SOURCE_DIR/start-claude-quick.bat" "$INSTALL_DIR/"
 cp -v "$SOURCE_DIR/model-env.sh" "$INSTALL_DIR/"
+cp -v "$SOURCE_DIR/model-switch.sh" "$INSTALL_DIR/"
+cp -v "$SOURCE_DIR/model-switch.bat" "$INSTALL_DIR/"
+cp -v "$SOURCE_DIR/model-switch.nu" "$INSTALL_DIR/"
 cp -v "$SOURCE_DIR/models.json" "$INSTALL_DIR/"
 
 # ── Create or copy .env ─────────────────────────────────────────
@@ -54,6 +57,7 @@ for RC in ~/.bashrc ~/.zshrc; do
       sed -i "s|export PATH=.*start-claude-code.*|export PATH=\"$INSTALL_DIR:\$PATH\"|" "$RC"
       sed -i "s|alias claude-new=.*|alias claude-new='$INSTALL_DIR/start-claude-quick.sh --new'|" "$RC"
       sed -i "s|alias claude-resume=.*|alias claude-resume='$INSTALL_DIR/start-claude-quick.sh --resume'|" "$RC"
+      sed -i "s|alias model-switch=.*|alias model-switch='source $INSTALL_DIR/model-switch.sh'|" "$RC"
       echo "Updated aliases in $RC"
     else
       cat >> "$RC" << EOF
@@ -62,6 +66,7 @@ for RC in ~/.bashrc ~/.zshrc; do
 export PATH="$INSTALL_DIR:\$PATH"
 alias claude-new='$INSTALL_DIR/start-claude-quick.sh --new'
 alias claude-resume='$INSTALL_DIR/start-claude-quick.sh --resume'
+alias model-switch='source $INSTALL_DIR/model-switch.sh'
 EOF
       echo "Added aliases to $RC"
     fi
@@ -78,3 +83,5 @@ echo "  1. Edit $INSTALL_DIR/.env  to add your API keys (if not already set)"
 echo "  2. Run: source ~/.bashrc   (or source ~/.zshrc)"
 echo "  3. Use:  claude-new        (start new session)"
 echo "          claude-resume     (resume last session)"
+echo "          model-switch      (list / switch models)"
+echo "  Or:    start-claude-quick.sh --switch <model>"

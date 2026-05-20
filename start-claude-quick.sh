@@ -27,6 +27,7 @@ Start Claude Code with auto-detected model environment and session management.
 Actions:
   resume, -r, --resume    Resume the most recent conversation
   new, -n, --new          Start a fresh conversation
+  --switch <model>, -s    Switch model then start/resume
   (none)                  Interactive picker (new / resume / pick)
 
 Session picker:
@@ -51,8 +52,9 @@ Environment:
     CLAUDE_CODE_MAX_CONTEXT_TOKENS — model context window
 
 Model switching:
-  1. Run: cc switch <model>    (updates settings.json)
+  1. Run: model-switch <model> (updates settings.json)
   2. Run: ./start-claude-quick.sh  (auto-reads new model)
+  Or:    ./start-claude-quick.sh --switch <model>  (one step)
 EOF
     exit 0
     ;;
@@ -75,6 +77,7 @@ source "$SCRIPT_DIR/model-env.sh"
 
 # ── Parse arguments ───────────────────────────────────────────
 ACTION=""
+SWITCH_MODEL=""
 EXTRA_ARGS=()
 
 for arg in "$@"; do
@@ -85,11 +88,24 @@ for arg in "$@"; do
     new|-n|--new)
       ACTION="new"
       ;;
+    --switch|-s)
+      # Next arg is the model name — handled in next iteration
+      SWITCH_MODEL="__PENDING__"
+      ;;
     *)
-      EXTRA_ARGS+=("$arg")
+      if [[ "$SWITCH_MODEL" == "__PENDING__" ]]; then
+        SWITCH_MODEL="$arg"
+      else
+        EXTRA_ARGS+=("$arg")
+      fi
       ;;
   esac
 done
+
+# ── Switch model if requested ─────────────────────────────────
+if [[ -n "$SWITCH_MODEL" ]]; then
+  source "$SCRIPT_DIR/model-switch.sh" "$SWITCH_MODEL"
+fi
 
 # ── Auto-prompt when no action specified ─────────────────────
 if [[ -z "$ACTION" ]]; then

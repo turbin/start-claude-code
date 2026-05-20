@@ -26,6 +26,9 @@ REM -- Copy core files --
 call :copy_file "%SOURCE_DIR%\start-claude-quick.sh"  "%INSTALL_DIR%\"
 call :copy_file "%SOURCE_DIR%\start-claude-quick.bat" "%INSTALL_DIR%\"
 call :copy_file "%SOURCE_DIR%\model-env.sh"           "%INSTALL_DIR%\"
+call :copy_file "%SOURCE_DIR%\model-switch.sh"        "%INSTALL_DIR%\"
+call :copy_file "%SOURCE_DIR%\model-switch.bat"       "%INSTALL_DIR%\"
+call :copy_file "%SOURCE_DIR%\model-switch.nu"        "%INSTALL_DIR%\"
 call :copy_file "%SOURCE_DIR%\models.json"            "%INSTALL_DIR%\"
 
 REM -- Create or copy .env --
@@ -69,8 +72,9 @@ if defined PS_PROFILE (
       echo.
       echo function claude-new { ^& "%INSTALL_DIR%\claude-new.bat" $args }
       echo function claude-resume { ^& "%INSTALL_DIR%\claude-resume.bat" $args }
+      echo function model-switch { ^& "%INSTALL_DIR%\model-switch.bat" $args }
     ) >> "!PS_PROFILE!"
-    echo Added claude-new / claude-resume to PowerShell profile
+    echo Added claude-new / claude-resume / model-switch to PowerShell profile
   ) else (
     echo PowerShell profile functions already configured
   )
@@ -99,7 +103,9 @@ echo   1. Edit %INSTALL_DIR%\.env  to add your API keys (if not already set)
 echo   2. Open a NEW terminal window  (PATH change takes effect)
 echo   3. Use:  claude-new         (start new session)
 echo           claude-resume      (resume last session)
+echo           model-switch       (list / switch models)
 echo   Or:    start-claude-quick  (interactive picker)
+echo          start-claude-quick --switch deepseek-v4-flash (one-step switch + launch)
 goto :eof
 
 REM -- Helper: copy a file with status message --
