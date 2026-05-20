@@ -38,21 +38,14 @@ REM -- Create or copy .env --
 REM If install dir already has .env, preserve it (don't overwrite user's API keys)
 if exist "%INSTALL_DIR%\.env" (
   echo Existing .env found in install directory, preserving it
-) else if exist "%SOURCE_DIR%\.env" (
-  copy /Y "%SOURCE_DIR%\.env" "%INSTALL_DIR%\.env" >nul
-  echo Copied existing .env with API keys
 ) else (
-  (
-    echo # Qwen Coding Plan API Key
-    echo QWEN_CODING_API_KEY=""
-    echo.
-    echo # Moonshot / Kimi API Key (optional)
-    echo # MOONSHOT_API_KEY=""
-    echo.
-    echo # DeepSeek API Key (optional)
-    echo # DEEPSEEK_API_KEY=""
-  ) > "%INSTALL_DIR%\.env"
-  echo Created %INSTALL_DIR%\.env - please edit it to add your API keys
+  if exist "%SOURCE_DIR%\.env" (
+    copy /Y "%SOURCE_DIR%\.env" "%INSTALL_DIR%\.env" >nul
+    echo Copied existing .env with API keys
+  ) else (
+    powershell -NoProfile -Command "Set-Content '%INSTALL_DIR:\=/%/.env' '# Qwen Coding Plan API Key'; Add-Content '%INSTALL_DIR:\=/%/.env' 'QWEN_CODING_API_KEY=\"\"'; Add-Content '%INSTALL_DIR:\=/%/.env' ''; Add-Content '%INSTALL_DIR:\=/%/.env' '# Moonshot / Kimi API Key (optional)'; Add-Content '%INSTALL_DIR:\=/%/.env' '# MOONSHOT_API_KEY=\"\"'; Add-Content '%INSTALL_DIR:\=/%/.env' ''; Add-Content '%INSTALL_DIR:\=/%/.env' '# DeepSeek API Key (optional)'; Add-Content '%INSTALL_DIR:\=/%/.env' '# DEEPSEEK_API_KEY=\"\"'"
+    echo Created %INSTALL_DIR%\.env - please edit it to add your API keys
+  )
 )
 
 REM -- Add to user PATH --
