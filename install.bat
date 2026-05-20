@@ -23,15 +23,16 @@ echo Installing start-claude-code to %INSTALL_DIR% ...
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
 REM -- Copy core files --
-call :copy_file "%SOURCE_DIR%\start-claude-quick.sh"  "%INSTALL_DIR%\"
-call :copy_file "%SOURCE_DIR%\start-claude-quick.bat" "%INSTALL_DIR%\"
-call :copy_file "%SOURCE_DIR%\start-claude-quick.nu"  "%INSTALL_DIR%\"
-call :copy_file "%SOURCE_DIR%\model-env.sh"           "%INSTALL_DIR%\"
-call :copy_file "%SOURCE_DIR%\model-env.nu"           "%INSTALL_DIR%\"
-call :copy_file "%SOURCE_DIR%\model-switch.sh"        "%INSTALL_DIR%\"
-call :copy_file "%SOURCE_DIR%\model-switch.bat"       "%INSTALL_DIR%\"
-call :copy_file "%SOURCE_DIR%\model-switch.nu"        "%INSTALL_DIR%\"
-call :copy_file "%SOURCE_DIR%\models.json"            "%INSTALL_DIR%\"
+copy /Y "%SOURCE_DIR%\start-claude-quick.sh"  "%INSTALL_DIR%\" >nul
+copy /Y "%SOURCE_DIR%\start-claude-quick.bat" "%INSTALL_DIR%\" >nul
+copy /Y "%SOURCE_DIR%\start-claude-quick.nu"  "%INSTALL_DIR%\" >nul
+copy /Y "%SOURCE_DIR%\model-env.sh"           "%INSTALL_DIR%\" >nul
+copy /Y "%SOURCE_DIR%\model-env.nu"           "%INSTALL_DIR%\" >nul
+copy /Y "%SOURCE_DIR%\model-switch.sh"        "%INSTALL_DIR%\" >nul
+copy /Y "%SOURCE_DIR%\model-switch.bat"       "%INSTALL_DIR%\" >nul
+copy /Y "%SOURCE_DIR%\model-switch.nu"        "%INSTALL_DIR%\" >nul
+copy /Y "%SOURCE_DIR%\models.json"            "%INSTALL_DIR%\" >nul
+echo Copied core files
 
 REM -- Create or copy .env --
 if exist "%SOURCE_DIR%\.env" (
@@ -108,14 +109,3 @@ echo           claude-resume      (resume last session)
 echo           model-switch       (list / switch models)
 echo   Or:    start-claude-quick  (interactive picker)
 echo          start-claude-quick --switch deepseek-v4-flash (one-step switch + launch)
-goto :eof
-
-REM -- Helper: copy a file with status message --
-:copy_file
-copy /Y "%~1" "%~2" >nul 2>nul
-if !errorlevel! equ 0 (
-  echo   Copied %~nx1
-) else (
-  echo   FAILED: %~nx1
-)
-goto :eof
