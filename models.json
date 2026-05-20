@@ -24,6 +24,14 @@
       "context_tokens": 256000,
       "max_thinking_tokens": 16384,
       "flags": "cache"
+    },
+    "deepseek-v3": {
+      "id": "deepseek-chat",
+      "base_url": "https://api.deepseek.com/anthropic",
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "context_tokens": 128000,
+      "max_thinking_tokens": 16000,
+      "flags": "cache"
     }
   }
 }
