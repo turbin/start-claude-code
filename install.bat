@@ -23,16 +23,8 @@ echo Installing start-claude-code to %INSTALL_DIR% ...
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
 REM -- Copy core files --
-copy /Y "%SOURCE_DIR%\start-claude-quick.sh"  "%INSTALL_DIR%\" >nul
-copy /Y "%SOURCE_DIR%\start-claude-quick.bat" "%INSTALL_DIR%\" >nul
-copy /Y "%SOURCE_DIR%\start-claude-quick.nu"  "%INSTALL_DIR%\" >nul
-copy /Y "%SOURCE_DIR%\model-env.sh"           "%INSTALL_DIR%\" >nul
-copy /Y "%SOURCE_DIR%\model-env.nu"           "%INSTALL_DIR%\" >nul
-copy /Y "%SOURCE_DIR%\model-switch.sh"        "%INSTALL_DIR%\" >nul
-copy /Y "%SOURCE_DIR%\model-switch.bat"       "%INSTALL_DIR%\" >nul
-copy /Y "%SOURCE_DIR%\model-switch.nu"        "%INSTALL_DIR%\" >nul
-copy /Y "%SOURCE_DIR%\models.json"            "%INSTALL_DIR%\" >nul
-echo Copied core files
+REM Use PowerShell Copy-Item to avoid cmd copy corruption issues with certain files
+powershell -NoProfile -Command "$src='%SOURCE_DIR:\=\\%'; $dst='%INSTALL_DIR:\=\\%'; @('start-claude-quick.sh','start-claude-quick.bat','start-claude-quick.nu','model-env.sh','model-env.nu','model-switch.sh','model-switch.bat','model-switch.nu','models.json') | ForEach-Object { Copy-Item \"$src\\$_\" \"$dst\\$_\" -Force }; Write-Host 'Copied core files'"
 
 REM -- Create or copy .env --
 REM If install dir already has .env, preserve it (don't overwrite user's API keys)

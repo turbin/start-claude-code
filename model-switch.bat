@@ -39,11 +39,40 @@ echo Please install Git for Windows: https://git-scm.com/download/win
 exit /b 1
 
 :found_bash
-REM Convert Windows path to Unix-style
-set "SH_SCRIPT_BASH=%SH_SCRIPT:\=/%"
-for /f "tokens=1,* delims=:" %%A in ("%SH_SCRIPT_BASH%") do (
-  set "SH_SCRIPT_BASH=/%%A%%B"
+REM Convert script directory to Git Bash Unix-style with lowercase drive letter:
+set "SH_DIR_BASH=%SCRIPT_DIR:\=/%"
+for /f "tokens=1,* delims=:" %%A in ("%SH_DIR_BASH%") do (
+  set "DRIVE_UPPER=%%A"
+  set "REST=%%B"
 )
+set "DRIVE_LOWER=%DRIVE_UPPER:A=a%"
+set "DRIVE_LOWER=%DRIVE_LOWER:B=b%"
+set "DRIVE_LOWER=%DRIVE_LOWER:C=c%"
+set "DRIVE_LOWER=%DRIVE_LOWER:D=d%"
+set "DRIVE_LOWER=%DRIVE_LOWER:E=e%"
+set "DRIVE_LOWER=%DRIVE_LOWER:F=f%"
+set "DRIVE_LOWER=%DRIVE_LOWER:G=g%"
+set "DRIVE_LOWER=%DRIVE_LOWER:H=h%"
+set "DRIVE_LOWER=%DRIVE_LOWER:I=i%"
+set "DRIVE_LOWER=%DRIVE_LOWER:J=j%"
+set "DRIVE_LOWER=%DRIVE_LOWER:K=k%"
+set "DRIVE_LOWER=%DRIVE_LOWER:L=l%"
+set "DRIVE_LOWER=%DRIVE_LOWER:M=m%"
+set "DRIVE_LOWER=%DRIVE_LOWER:N=n%"
+set "DRIVE_LOWER=%DRIVE_LOWER:O=o%"
+set "DRIVE_LOWER=%DRIVE_LOWER:P=p%"
+set "DRIVE_LOWER=%DRIVE_LOWER:Q=q%"
+set "DRIVE_LOWER=%DRIVE_LOWER:R=r%"
+set "DRIVE_LOWER=%DRIVE_LOWER:S=s%"
+set "DRIVE_LOWER=%DRIVE_LOWER:T=t%"
+set "DRIVE_LOWER=%DRIVE_LOWER:U=u%"
+set "DRIVE_LOWER=%DRIVE_LOWER:V=v%"
+set "DRIVE_LOWER=%DRIVE_LOWER:W=w%"
+set "DRIVE_LOWER=%DRIVE_LOWER:X=x%"
+set "DRIVE_LOWER=%DRIVE_LOWER:Y=y%"
+set "DRIVE_LOWER=%DRIVE_LOWER:Z=z%"
+set "SH_DIR_BASH=/%DRIVE_LOWER%%REST%"
 
-"%BASH_CMD%" -l -c "'%SH_SCRIPT_BASH%' %*"
+REM cd into script dir first so BASH_SOURCE resolves correctly
+"%BASH_CMD%" -l -c "cd '%SH_DIR_BASH%' && ./model-switch.sh %*"
 exit /b !errorlevel!

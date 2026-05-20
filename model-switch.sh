@@ -9,6 +9,16 @@ set -euo pipefail
 #   model-switch                        # if installed in PATH
 #   model-switch --list                 # show available models
 
+# ── Git Bash compatibility ─────────────────────────────────────
+case "$(uname -o 2>/dev/null || true)" in
+  Msys*|MINGW*)
+    TO_WIN_PATH() { cygpath -m "$1" 2>/dev/null || echo "$1"; }
+    ;;
+  *)
+    TO_WIN_PATH() { echo "$1"; }
+    ;;
+esac
+
 # ── Script location ─────────────────────────────────────────────
 SCRIPT_SOURCE="${BASH_SOURCE[0]}"
 while [[ -L "$SCRIPT_SOURCE" ]]; do
@@ -20,9 +30,12 @@ while [[ -L "$SCRIPT_SOURCE" ]]; do
   fi
 done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
+SCRIPT_DIR_WIN="$(TO_WIN_PATH "$SCRIPT_DIR")"
 
 CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+CONFIG_DIR_WIN="$(TO_WIN_PATH "$CONFIG_DIR")"
 SETTINGS_FILE="$CONFIG_DIR/settings.json"
+SETTINGS_FILE_WIN="$CONFIG_DIR_WIN/settings.json"
 
 # ── Helpers ─────────────────────────────────────────────────────
 log()  { echo "[model-switch] $*" >&2; }
@@ -39,6 +52,7 @@ else
 fi
 
 MODELS_FILE="$SCRIPT_DIR/models.json"
+MODELS_FILE_WIN="$SCRIPT_DIR_WIN/models.json"
 
 # ── List models ─────────────────────────────────────────────────
 list_models() {
@@ -52,7 +66,7 @@ list_models() {
     current_model=$("$PY" -c "
 import json
 try:
-    with open('$SETTINGS_FILE') as f: d = json.load(f)
+    with open('$SETTINGS_FILE_WIN') as f: d = json.load(f)
     print(d.get('model', ''))
 except: pass
 " 2>/dev/null || true)
@@ -62,7 +76,7 @@ except: pass
   echo ""
   "$PY" -c "
 import json
-with open('$MODELS_FILE') as f: d = json.load(f)
+with open('$MODELS_FILE_WIN') as f: d = json.load(f)
 models = d.get('models', {})
 default = d.get('default_model', '')
 for name, cfg in models.items():
@@ -82,7 +96,7 @@ get_model_info() {
   local model_name="$1"
   "$PY" -c "
 import json, sys
-with open('$MODELS_FILE') as f: d = json.load(f)
+with open('$MODELS_FILE_WIN') as f: d = json.load(f)
 m = d.get('models', {}).get('$model_name')
 if m:
     print(f\"id={m.get('id', '')}\")
@@ -102,7 +116,7 @@ switch_model() {
   if [[ -f "$MODELS_FILE" ]]; then
     if ! "$PY" -c "
 import json, sys
-with open('$MODELS_FILE') as f: d = json.load(f)
+with open('$MODELS_FILE_WIN') as f: d = json.load(f)
 if '$model_name' not in d.get('models', {}):
     sys.exit(1)
 " 2>/dev/null; then
@@ -120,10 +134,10 @@ if '$model_name' not in d.get('models', {}):
   if [[ -f "$SETTINGS_FILE" ]]; then
     "$PY" -c "
 import json
-with open('$SETTINGS_FILE') as f: d = json.load(f)
+with open('$SETTINGS_FILE_WIN') as f: d = json.load(f)
 old = d.get('model', '')
 d['model'] = '$model_name'
-with open('$SETTINGS_FILE', 'w') as f:
+with open('$SETTINGS_FILE_WIN', 'w') as f:
     json.dump(d, f, indent=2)
     f.write('\n')
 if old:
@@ -135,7 +149,7 @@ else:
     "$PY" -c "
 import json
 d = {'model': '$model_name'}
-with open('$SETTINGS_FILE', 'w') as f:
+with open('$SETTINGS_FILE_WIN', 'w') as f:
     json.dump(d, f, indent=2)
     f.write('\n')
 print(f'Created settings.json with model: $model_name')
@@ -196,7 +210,7 @@ if [[ -f "$SETTINGS_FILE" ]]; then
   current_model=$("$PY" -c "
 import json
 try:
-    with open('$SETTINGS_FILE') as f: d = json.load(f)
+    with open('$SETTINGS_FILE_WIN') as f: d = json.load(f)
     print(d.get('model', ''))
 except: pass
 " 2>/dev/null || true)
@@ -208,7 +222,7 @@ echo ""
 # Build numbered list
 "$PY" -c "
 import json
-with open('$MODELS_FILE') as f: d = json.load(f)
+with open('$MODELS_FILE_WIN') as f: d = json.load(f)
 models = d.get('models', {})
 for i, (name, cfg) in enumerate(models.items(), 1):
     marker = ' (current)' if name == '$current_model' else ''
@@ -230,7 +244,7 @@ fi
 # Resolve choice to model name
 MODEL_NAME=$("$PY" -c "
 import json, sys
-with open('$MODELS_FILE') as f: d = json.load(f)
+with open('$MODELS_FILE_WIN') as f: d = json.load(f)
 models = list(d.get('models', {}).keys())
 idx = int('$CHOICE') - 1
 if 0 <= idx < len(models):
