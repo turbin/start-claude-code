@@ -25,12 +25,20 @@
       "max_thinking_tokens": 16384,
       "flags": "cache"
     },
-    "deepseek-v3": {
-      "id": "deepseek-chat",
+    "deepseek-v4-flash": {
+      "id": "deepseek-v4-flash",
       "base_url": "https://api.deepseek.com/anthropic",
       "api_key_env": "DEEPSEEK_API_KEY",
       "context_tokens": 128000,
       "max_thinking_tokens": 16000,
+      "flags": "cache"
+    },
+    "deepseek-v4-pro": {
+      "id": "deepseek-v4-pro",
+      "base_url": "https://api.deepseek.com/anthropic",
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "context_tokens": 1000000,
+      "max_thinking_tokens": 32000,
       "flags": "cache"
     }
   }
